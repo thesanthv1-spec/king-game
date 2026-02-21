@@ -6,9 +6,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static("public")); // your HTML, CSS, JS files
+app.use(express.static("public"));
 
-let players = {}; // { socketId: { name, role } }
+let playerList = []; // { name, role, socketId }
 let roles = ["King", "Queen", "Bishop", "Police", "Thief"];
 let gameStarted = false;
 
@@ -17,82 +17,82 @@ function shuffle(array) {
     return array.sort(() => Math.random() - 0.5);
 }
 
-// Start a new game
+// Start the game if 5 active players
 function startGame() {
-    if (Object.keys(players).length !== 5) return;
+    if (playerList.length !== 5) return;
 
     gameStarted = true;
     const shuffledRoles = shuffle([...roles]);
 
-    Object.keys(players).forEach((id, index) => {
-        players[id].role = shuffledRoles[index];
-        io.to(id).emit("yourRole", players[id].role);
+    playerList.forEach((player, index) => {
+        player.role = shuffledRoles[index];
+        io.to(player.socketId).emit("yourRole", player.role);
     });
 
-    io.emit("updatePlayers", Object.values(players));
+    io.emit("updatePlayers", playerList.map(p => ({ name: p.name })));
     console.log("Game started!");
 }
 
-// Reset roles for a new round
+// Reset roles for next round but keep players
 function resetRound() {
-    Object.keys(players).forEach(id => players[id].role = null);
+    playerList.forEach(p => p.role = null);
     gameStarted = false;
     io.emit("result", "New round can start! Click Start Game.");
-    io.emit("updatePlayers", Object.values(players));
+    io.emit("updatePlayers", playerList.map(p => ({ name: p.name })));
 }
 
 io.on("connection", (socket) => {
     console.log("Player connected:", socket.id);
 
-    // Join game
     socket.on("join", (name) => {
-        // Check if room already has 5 players
-        if (Object.keys(players).length >= 5) {
-            socket.emit("roomFull");
-            return;
+        // Check if player name is already in list
+        let existing = playerList.find(p => p.name === name);
+        if (existing) {
+            // Update socketId for reconnect
+            existing.socketId = socket.id;
+        } else {
+            if (playerList.length >= 5) {
+                socket.emit("roomFull");
+                return;
+            }
+            playerList.push({ name, role: null, socketId: socket.id });
         }
 
-        // Add new player
-        players[socket.id] = { name, role: null };
-        io.emit("updatePlayers", Object.values(players));
+        io.emit("updatePlayers", playerList.map(p => ({ name: p.name })));
 
-        // Start game automatically when 5 players are connected
-        if (Object.keys(players).length === 5 && !gameStarted) {
+        if (playerList.length === 5 && !gameStarted) {
             startGame();
         }
     });
 
-    // Police guesses
     socket.on("guess", (playerName) => {
         if (!gameStarted) return;
 
-        const policeId = Object.keys(players).find(id => players[id].role === "Police");
-        if (socket.id !== policeId) return; // only Police can guess
+        let police = playerList.find(p => p.role === "Police");
+        if (!police || police.socketId !== socket.id) return;
 
-        const target = Object.values(players).find(p => p.name === playerName);
+        let target = playerList.find(p => p.name === playerName);
         if (!target) return;
 
         if (target.role === "Thief") {
-            io.emit("result", `Police caught the thief! 🎉`);
+            io.emit("result", "Police caught the thief! 🎉");
         } else {
-            io.emit("result", `Police guessed wrong. Thief wins! 😈`);
+            io.emit("result", "Police guessed wrong. Thief wins! 😈");
         }
 
-        // Reset roles for next round but keep players
         resetRound();
     });
 
-    // Manual start of new round
     socket.on("startNewRound", () => {
-        if (!gameStarted && Object.keys(players).length === 5) {
+        if (!gameStarted && playerList.length === 5) {
             startGame();
         }
     });
 
-    // Disconnect
     socket.on("disconnect", () => {
-        delete players[socket.id];
-        io.emit("updatePlayers", Object.values(players));
+        // Remove player if socketId matches
+        playerList = playerList.filter(p => p.socketId !== socket.id);
+        io.emit("updatePlayers", playerList.map(p => ({ name: p.name })));
     });
 });
 
