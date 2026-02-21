@@ -10,55 +10,53 @@
             color: white;
             padding: 40px;
         }
-
-        input {
+        input, button {
             padding: 8px;
             font-size: 16px;
         }
-
-        button {
-            padding: 8px 15px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-left: 5px;
-        }
-
         ul {
             list-style: none;
             padding: 0;
             margin-top: 20px;
         }
-
         li {
             background: #222;
             margin: 5px auto;
             padding: 8px;
             width: 200px;
             border-radius: 5px;
+            cursor: pointer;
         }
-
         #status {
             margin-top: 20px;
             font-weight: bold;
+        }
+        #roleText, #resultText {
+            margin-top: 15px;
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
 
-    <h1>King – Police – Thief Game</h1>
+<h1>King – Police – Thief Game</h1>
 
+<div id="joinSection">
     <input type="text" id="nameInput" placeholder="Enter your name" />
     <button id="joinBtn">Join</button>
+</div>
 
-    <p id="status">Players Joined: 0/5</p>
+<p id="status">Players Joined: 0/5</p>
 
-    <ul id="playerList"></ul>
+<ul id="playerList"></ul>
 
-    <!-- Socket.io -->
-    <script src="/socket.io/socket.io.js"></script>
+<p id="roleText"></p>
+<p id="resultText"></p>
 
-    <!-- Your script -->
-    <script src="script.js"></script>
+<!-- Socket.IO -->
+<script src="/socket.io/socket.io.js"></script>
+<!-- Your JS -->
+<script src="/script.js"></script>
 
 </body>
 </html>

@@ -1,42 +1,52 @@
 const socket = io();
 
-function joinGame() {
-    const name = document.getElementById("nameInput").value;
-    if (name.trim() === "") return;
+// Elements
+const nameInput = document.getElementById("nameInput");
+const joinBtn = document.getElementById("joinBtn");
+const playerList = document.getElementById("playerList");
+const statusText = document.getElementById("status");
+const roleText = document.getElementById("roleText");
+const resultText = document.getElementById("resultText");
 
-    socket.emit("join", name);
+// Join button
+joinBtn.addEventListener("click", () => {
+    const name = nameInput.value.trim();
+    if (!name) return alert("Enter your name");
 
-    document.getElementById("joinSection").style.display = "none";
-    document.getElementById("gameSection").style.display = "block";
-}
+    socket.emit("join-game", name);
 
-socket.on("updatePlayers", (players) => {
-    const list = document.getElementById("playerList");
-    list.innerHTML = "<h3>Players:</h3>";
-
-    players.forEach(player => {
-        const div = document.createElement("div");
-        div.innerText = player.name;
-        list.appendChild(div);
-    });
+    nameInput.disabled = true;
+    joinBtn.disabled = true;
 });
 
-socket.on("yourRole", (role) => {
-    document.getElementById("roleText").innerText = "Your Role: " + role;
+// Update player list
+socket.on("update-players", (players) => {
+    playerList.innerHTML = "";
+    players.forEach(player => {
+        const li = document.createElement("li");
+        li.textContent = player.name;
+        playerList.appendChild(li);
+    });
+    statusText.textContent = `Players Joined: ${players.length}/5`;
+});
+
+// Show room full
+socket.on("room-full", () => alert("Room is full!"));
+
+// Assign role
+socket.on("your-role", (role) => {
+    roleText.textContent = "Your Role: " + role;
 
     if (role === "Police") {
-        document.getElementById("playerList").onclick = (e) => {
-            if (e.target.tagName === "DIV") {
-                socket.emit("guess", e.target.innerText);
+        playerList.addEventListener("click", (e) => {
+            if (e.target.tagName === "LI") {
+                socket.emit("guess-player", e.target.textContent);
             }
-        };
+        });
     }
 });
 
-socket.on("result", (message) => {
-    document.getElementById("resultText").innerText = message;
-});
-
-socket.on("roomFull", () => {
-    alert("Room is full!");
+// Show guess result
+socket.on("guess-result", (message) => {
+    resultText.textContent = message;
 });
