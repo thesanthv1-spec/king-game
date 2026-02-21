@@ -1,18 +1,20 @@
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
+const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static(__dirname));
+// Serve static files from public folder
+app.use(express.static(path.join(__dirname, "public")));
 
-let players = []; // {id, name, role}
-const roles = ["Indravarma", "Tun Tun", "Kirmada", "Police", "Thief", "Pombala Soku"];
+let players = [];
+const roles = ["King", "Queen", "Bishop", "Police", "Thief", "Citizen"];
 let round = 0;
 
-// Utility function
+// Shuffle helper
 function shuffle(array) {
   return array.sort(() => Math.random() - 0.5);
 }
@@ -28,6 +30,7 @@ function startRound() {
   io.emit("roundStarted", round);
 }
 
+// Socket.io events
 io.on("connection", (socket) => {
   console.log("Player connected:", socket.id);
 
@@ -40,9 +43,7 @@ io.on("connection", (socket) => {
     players.push({ id: socket.id, name: name });
     io.emit("updatePlayers", players);
 
-    if (players.length === 6) {
-      startRound(); // start the first round
-    }
+    if (players.length === 6) startRound();
   });
 
   socket.on("policeGuess", (targetId) => {
@@ -50,7 +51,7 @@ io.on("connection", (socket) => {
     const success = thief.id === targetId;
     io.emit("roundResult", { success, thief: thief.name });
 
-    // Start next round after 3 seconds
+    // Start next round automatically
     setTimeout(() => {
       startRound();
     }, 3000);
@@ -62,6 +63,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
-});
+// Dynamic port for Render or local
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

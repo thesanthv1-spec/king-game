@@ -9,41 +9,43 @@ const guessList = document.getElementById("guessList");
 const roundInfo = document.getElementById("roundInfo");
 const resultDiv = document.getElementById("result");
 
+// Join game
 joinBtn.onclick = () => {
   const name = nameInput.value.trim();
   if (name) socket.emit("joinGame", name);
 };
 
+// Room full alert
 socket.on("roomFull", () => {
   alert("The game room is full! Try again later.");
 });
 
+// Update player list
 socket.on("updatePlayers", (players) => {
   playersList.innerHTML = players.map(p => `<li>${p.name}</li>`).join("");
   if (roleDiv.innerText.includes("Police")) updateGuessList(players);
 });
 
+// Receive role
 socket.on("yourRole", (role) => {
   roleDiv.innerText = `Your Role: ${role}`;
-  if (role === "Police") {
-    guessSection.style.display = "block";
-  } else {
-    guessSection.style.display = "none";
-  }
+  guessSection.style.display = (role === "Police") ? "block" : "none";
 });
 
+// Round started
 socket.on("roundStarted", (roundNum) => {
   roundInfo.innerText = `--- Round ${roundNum} ---`;
   resultDiv.innerText = "";
 });
 
+// Round result
 socket.on("roundResult", ({success, thief}) => {
   resultDiv.innerText = success 
     ? `Police caught the Thief (${thief})!` 
     : `Thief (${thief}) escaped!`;
 });
 
-// Helper to update guess buttons for Police
+// Update guess buttons for Police
 function updateGuessList(players) {
   guessList.innerHTML = players
     .filter(p => !roleDiv.innerText.includes(p.name))
@@ -51,6 +53,7 @@ function updateGuessList(players) {
     .join("");
 }
 
+// Police guess
 function guess(targetId) {
   socket.emit("policeGuess", targetId);
 }
