@@ -6,81 +6,51 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+const PORT = process.env.PORT || 3000;
+
+let players = [];
+const MAX_PLAYERS = 5;
+
 app.use(express.static("public"));
 
-let players = {};
-let roles = ["King", "Queen", "Bishop", "Police", "Thief"];
-let gameStarted = false;
-
-// Shuffle function
-function shuffle(array) {
-    return array.sort(() => Math.random() - 0.5);
-}
-
 io.on("connection", (socket) => {
-    console.log("Player connected:", socket.id);
+    console.log("User connected:", socket.id);
 
-    socket.on("join", (name) => {
-        if (Object.keys(players).length >= 5 || gameStarted) {
-            socket.emit("roomFull");
+    // When player joins
+    socket.on("join-game", (playerName) => {
+
+        if (players.length >= MAX_PLAYERS) {
+            socket.emit("room-full");
             return;
         }
 
-        players[socket.id] = {
-            name: name,
-            role: null
+        const player = {
+            id: socket.id,
+            name: playerName
         };
 
-        io.emit("updatePlayers", Object.values(players));
+        players.push(player);
 
-        if (Object.keys(players).length === 5) {
-            startGame();
+        console.log("Players:", players.length);
+
+        io.emit("update-players", players);
+
+        if (players.length === MAX_PLAYERS) {
+            io.emit("start-game", players);
         }
     });
 
-    socket.on("guess", (playerName) => {
-        if (!gameStarted) return;
-
-        const guessedPlayer = Object.values(players)
-            .find(p => p.name === playerName);
-
-        if (!guessedPlayer) return;
-
-        if (guessedPlayer.role === "Thief") {
-            io.emit("result", "Police Wins! 🎉");
-        } else {
-            io.emit("result", "Thief Wins! 😈");
-        }
-
-        resetGame();
-    });
-
+    // When player disconnects
     socket.on("disconnect", () => {
-        delete players[socket.id];
-        io.emit("updatePlayers", Object.values(players));
+        console.log("User disconnected:", socket.id);
+
+        players = players.filter(player => player.id !== socket.id);
+
+        console.log("Players after leave:", players.length);
+
+        io.emit("update-players", players);
     });
 });
-
-function startGame() {
-    gameStarted = true;
-    const shuffledRoles = shuffle([...roles]);
-
-    Object.keys(players).forEach((id, index) => {
-        players[id].role = shuffledRoles[index];
-        io.to(id).emit("yourRole", players[id].role);
-    });
-
-    console.log("Game started!");
-}
-
-function resetGame() {
-    players = {};
-    gameStarted = false;
-    console.log("Game reset");
-}
-
-// IMPORTANT FOR RENDER
-const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
