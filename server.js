@@ -74,9 +74,11 @@ function startGame() {
 }
 
 function resetGame() {
-    players = {};
+    // Keep players connected
+    Object.keys(players).forEach(id => players[id].role = null);
     gameStarted = false;
     console.log("Game reset");
+    io.emit("updatePlayers", Object.values(players));
 }
 
 // IMPORTANT FOR RENDER
