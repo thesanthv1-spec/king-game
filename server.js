@@ -21,6 +21,7 @@ function shuffle(array) {
 
 // Start a new round
 function startRound() {
+  if (players.length === 0) return;
   round++;
   const shuffledRoles = shuffle([...roles]);
   players.forEach((player, i) => {
@@ -43,7 +44,11 @@ io.on("connection", (socket) => {
     players.push({ id: socket.id, name: name });
     io.emit("updatePlayers", players);
 
-    if (players.length === 6) startRound();
+    if (players.length === 6) startRound(); // auto-start for full room
+  });
+
+  socket.on("manualStart", () => {
+    startRound(); // manual start for testing
   });
 
   socket.on("policeGuess", (targetId) => {
@@ -51,7 +56,6 @@ io.on("connection", (socket) => {
     const success = thief.id === targetId;
     io.emit("roundResult", { success, thief: thief.name });
 
-    // Start next round automatically
     setTimeout(() => {
       startRound();
     }, 3000);

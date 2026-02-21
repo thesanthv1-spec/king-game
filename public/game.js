@@ -1,6 +1,7 @@
 const socket = io();
 
 const joinBtn = document.getElementById("joinBtn");
+const manualStartBtn = document.getElementById("manualStartBtn");
 const nameInput = document.getElementById("name");
 const roleDiv = document.getElementById("role");
 const playersList = document.getElementById("players");
@@ -13,6 +14,11 @@ const resultDiv = document.getElementById("result");
 joinBtn.onclick = () => {
   const name = nameInput.value.trim();
   if (name) socket.emit("joinGame", name);
+};
+
+// Manual start for testing
+manualStartBtn.onclick = () => {
+  socket.emit("manualStart");
 };
 
 // Room full alert
