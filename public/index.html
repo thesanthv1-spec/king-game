@@ -1,62 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>King – Police – Thief Game</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #111;
-            color: white;
-            padding: 40px;
-        }
-        input, button {
-            padding: 8px;
-            font-size: 16px;
-        }
-        ul {
-            list-style: none;
-            padding: 0;
-            margin-top: 20px;
-        }
-        li {
-            background: #222;
-            margin: 5px auto;
-            padding: 8px;
-            width: 200px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #status {
-            margin-top: 20px;
-            font-weight: bold;
-        }
-        #roleText, #resultText {
-            margin-top: 15px;
-            font-size: 18px;
-        }
-    </style>
+    <title>King Police Thief Game</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>King – Police – Thief Game</h1>
+    <h1>King – Police – Thief Game</h1>
 
-<div id="joinSection">
-    <input type="text" id="nameInput" placeholder="Enter your name" />
-    <button id="joinBtn">Join</button>
-</div>
+    <div id="joinSection">
+        <input type="text" id="nameInput" placeholder="Enter your name">
+        <button onclick="joinGame()">Join Game</button>
+    </div>
 
-<p id="status">Players Joined: 0/5</p>
+    <div id="gameSection" style="display:none;">
+        <h2 id="roleText"></h2>
+        <div id="playerList"></div>
+    </div>
 
-<ul id="playerList"></ul>
+    <h2 id="resultText"></h2>
 
-<p id="roleText"></p>
-<p id="resultText"></p>
-
-<!-- Socket.IO -->
-<script src="/socket.io/socket.io.js"></script>
-<!-- Your JS -->
-<script src="/script.js"></script>
-
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>

@@ -1,52 +1,42 @@
 const socket = io();
 
-// Elements
-const nameInput = document.getElementById("nameInput");
-const joinBtn = document.getElementById("joinBtn");
-const playerList = document.getElementById("playerList");
-const statusText = document.getElementById("status");
-const roleText = document.getElementById("roleText");
-const resultText = document.getElementById("resultText");
+function joinGame() {
+    const name = document.getElementById("nameInput").value;
+    if (name.trim() === "") return;
 
-// Join button
-joinBtn.addEventListener("click", () => {
-    const name = nameInput.value.trim();
-    if (!name) return alert("Enter your name");
+    socket.emit("join", name);
 
-    socket.emit("join-game", name);
+    document.getElementById("joinSection").style.display = "none";
+    document.getElementById("gameSection").style.display = "block";
+}
 
-    nameInput.disabled = true;
-    joinBtn.disabled = true;
-});
+socket.on("updatePlayers", (players) => {
+    const list = document.getElementById("playerList");
+    list.innerHTML = "<h3>Players:</h3>";
 
-// Update player list
-socket.on("update-players", (players) => {
-    playerList.innerHTML = "";
     players.forEach(player => {
-        const li = document.createElement("li");
-        li.textContent = player.name;
-        playerList.appendChild(li);
+        const div = document.createElement("div");
+        div.innerText = player.name;
+        list.appendChild(div);
     });
-    statusText.textContent = `Players Joined: ${players.length}/5`;
 });
 
-// Show room full
-socket.on("room-full", () => alert("Room is full!"));
-
-// Assign role
-socket.on("your-role", (role) => {
-    roleText.textContent = "Your Role: " + role;
+socket.on("yourRole", (role) => {
+    document.getElementById("roleText").innerText = "Your Role: " + role;
 
     if (role === "Police") {
-        playerList.addEventListener("click", (e) => {
-            if (e.target.tagName === "LI") {
-                socket.emit("guess-player", e.target.textContent);
+        document.getElementById("playerList").onclick = (e) => {
+            if (e.target.tagName === "DIV") {
+                socket.emit("guess", e.target.innerText);
             }
-        });
+        };
     }
 });
 
-// Show guess result
-socket.on("guess-result", (message) => {
-    resultText.textContent = message;
+socket.on("result", (message) => {
+    document.getElementById("resultText").innerText = message;
+});
+
+socket.on("roomFull", () => {
+    alert("Room is full!");
 });

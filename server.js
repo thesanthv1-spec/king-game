@@ -1,82 +1,87 @@
-const express = require('express');
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const server = http.createServer(app);
+const io = new Server(server);
 
-// Serve all static files (index.html, script.js, etc.)
-app.use(express.static(__dirname));
+app.use(express.static("public"));
 
-// Explicitly serve index.html on root
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
-});
+let players = {};
+let roles = ["King", "Queen", "Bishop", "Police", "Thief"];
+let gameStarted = false;
 
-// Game data
-const MAX_PLAYERS = 5;
-let players = []; // {name, id, role}
+// Shuffle function
+function shuffle(array) {
+    return array.sort(() => Math.random() - 0.5);
+}
 
-// Socket.IO logic
-io.on('connection', socket => {
+io.on("connection", (socket) => {
+    console.log("Player connected:", socket.id);
 
-    // Player joins game
-    socket.on('join-game', (name) => {
-
-        if(players.length >= MAX_PLAYERS){
-            socket.emit('room-full');
+    socket.on("join", (name) => {
+        if (Object.keys(players).length >= 5 || gameStarted) {
+            socket.emit("roomFull");
             return;
         }
 
-        players.push({name, id: socket.id});
-        io.emit('update-players', players.map(p => ({name: p.name})));
+        players[socket.id] = {
+            name: name,
+            role: null
+        };
 
-        // When max players joined, start game
-        if(players.length === MAX_PLAYERS){
+        io.emit("updatePlayers", Object.values(players));
+
+        if (Object.keys(players).length === 5) {
             startGame();
         }
     });
 
-    // Police guesses a player
-    socket.on('guess-player', (targetName) => {
-        const police = players.find(p => p.id === socket.id);
-        const thief = players.find(p => p.role === 'Thief');
+    socket.on("guess", (playerName) => {
+        if (!gameStarted) return;
 
-        if(!police || police.role !== 'Police') return;
+        const guessedPlayer = Object.values(players)
+            .find(p => p.name === playerName);
 
-        if(targetName === thief.name){
-            socket.emit('guess-result', 'Correct! You caught the thief!');
-            io.emit('guess-result', `${police.name} caught the thief ${thief.name}!`);
+        if (!guessedPlayer) return;
+
+        if (guessedPlayer.role === "Thief") {
+            io.emit("result", "Police Wins! 🎉");
         } else {
-            socket.emit('guess-result', 'Wrong! Keep trying.');
+            io.emit("result", "Thief Wins! 😈");
         }
+
+        resetGame();
     });
 
-    // Player disconnects
-    socket.on('disconnect', () => {
-        players = players.filter(p => p.id !== socket.id);
-        io.emit('update-players', players.map(p => ({name: p.name})));
+    socket.on("disconnect", () => {
+        delete players[socket.id];
+        io.emit("updatePlayers", Object.values(players));
     });
 });
 
-// Start game: assign roles randomly
-function startGame(){
-    const shuffled = [...players].sort(() => Math.random() - 0.5);
+function startGame() {
+    gameStarted = true;
+    const shuffledRoles = shuffle([...roles]);
 
-    // 1 King
-    shuffled[0].role = 'King';
-    // 1 Police
-    shuffled[1].role = 'Police';
-    // Rest are Thieves
-    for(let i = 2; i < shuffled.length; i++) shuffled[i].role = 'Thief';
-
-    // Send roles to each player
-    shuffled.forEach(p => {
-        io.to(p.id).emit('your-role', p.role);
+    Object.keys(players).forEach((id, index) => {
+        players[id].role = shuffledRoles[index];
+        io.to(id).emit("yourRole", players[id].role);
     });
 
-    // Update player list with roles (optional)
-    io.emit('update-players', shuffled.map(p => ({name: p.name})));
+    console.log("Game started!");
 }
 
-// Start server
+function resetGame() {
+    players = {};
+    gameStarted = false;
+    console.log("Game reset");
+}
+
+// IMPORTANT FOR RENDER
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
