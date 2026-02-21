@@ -40,3 +40,8 @@ socket.on("result", (message) => {
 socket.on("roomFull", () => {
     alert("Room is full!");
 });
+
+// Optional: button to start a new round manually
+document.getElementById("startBtn")?.addEventListener("click", () => {
+    socket.emit("startNewRound");
+});

@@ -46,21 +46,23 @@ io.on("connection", (socket) => {
 
     // Join game
     socket.on("join", (name) => {
+        // Check if room already has 5 players
         if (Object.keys(players).length >= 5) {
             socket.emit("roomFull");
             return;
         }
 
-        players[socket.id] = { name: name, role: null };
+        // Add new player
+        players[socket.id] = { name, role: null };
         io.emit("updatePlayers", Object.values(players));
 
-        // Automatically start if 5 players
+        // Start game automatically when 5 players are connected
         if (Object.keys(players).length === 5 && !gameStarted) {
             startGame();
         }
     });
 
-    // Police makes a guess
+    // Police guesses
     socket.on("guess", (playerName) => {
         if (!gameStarted) return;
 
@@ -76,11 +78,11 @@ io.on("connection", (socket) => {
             io.emit("result", `Police guessed wrong. Thief wins! 😈`);
         }
 
-        // Reset round (roles only, keep players)
+        // Reset roles for next round but keep players
         resetRound();
     });
 
-    // Start a new round manually (optional)
+    // Manual start of new round
     socket.on("startNewRound", () => {
         if (!gameStarted && Object.keys(players).length === 5) {
             startGame();
