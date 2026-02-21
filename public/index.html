@@ -1,62 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>King Police Thief Game</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f0f0f0;
-        }
-        #gameSection, #resultText, #startBtn {
-            margin-top: 20px;
-        }
-        .playerDiv {
-            padding: 5px;
-            margin: 5px auto;
-            width: 150px;
-            border: 1px solid #333;
-            background-color: #fff;
-            border-radius: 5px;
-        }
-        .playerDiv:hover {
-            background-color: #e0e0ff;
-        }
-        input, button {
-            padding: 10px;
-            margin: 5px;
-        }
-        #startBtn {
-            display: block;
-            margin: 20px auto;
-            padding: 10px 20px;
-        }
-    </style>
+  <title>Find the Thief</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <h1>Find the Thief (6 Players)</h1>
 
-    <h1>King – Police – Thief Game</h1>
+  <div id="game">
+    <input id="name" placeholder="Enter your name">
+    <button id="joinBtn">Join Game</button>
 
-    <!-- Join Section -->
-    <div id="joinSection">
-        <input type="text" id="nameInput" placeholder="Enter your name">
-        <button onclick="joinGame()">Join Game</button>
+    <div id="role"></div>
+
+    <h3>Players:</h3>
+    <ul id="players"></ul>
+
+    <div id="guessSection" style="display:none;">
+      <h2>Police: Guess the Thief</h2>
+      <ul id="guessList"></ul>
     </div>
 
-    <!-- Game Section -->
-    <div id="gameSection" style="display:none;">
-        <h2 id="roleText"></h2>
-        <div id="playerList"></div>
-    </div>
+    <div id="roundInfo"></div>
+    <div id="result"></div>
+  </div>
 
-    <!-- Start New Round Button -->
-    <button id="startBtn">Start Game</button>
-
-    <!-- Result -->
-    <h2 id="resultText"></h2>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="game.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>

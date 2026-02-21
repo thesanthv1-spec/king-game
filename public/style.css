@@ -1,18 +1,45 @@
 body {
-    font-family: Arial;
-    text-align: center;
-    background: #ffffff;
-    color: rgb(0, 0, 0);
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-color: #f0f0f0;
+  padding: 20px;
+}
+
+h1 {
+  color: #222;
+}
+
+#game {
+  margin-top: 20px;
 }
 
 input {
-    padding: 10px;
-    font-size: 16px;
+  padding: 5px;
+  font-size: 16px;
 }
 
 button {
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    margin: 5px;
+  padding: 5px 10px;
+  margin-left: 5px;
+  cursor: pointer;
+}
+
+#players, #guessList {
+  list-style: none;
+  padding: 0;
+}
+
+#players li, #guessList li {
+  margin: 5px 0;
+}
+
+#roundInfo {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+#result {
+  margin-top: 10px;
+  color: darkred;
+  font-weight: bold;
 }
