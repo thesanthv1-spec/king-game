@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>King Police Thief Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>King – Police – Thief Game</h1>
+
+    <div id="joinSection">
+        <input type="text" id="nameInput" placeholder="Enter your name">
+        <button onclick="joinGame()">Join Game</button>
+    </div>
+
+    <div id="gameSection" style="display:none;">
+        <h2 id="roleText"></h2>
+        <div id="playerList"></div>
+    </div>
+
+    <h2 id="resultText"></h2>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
