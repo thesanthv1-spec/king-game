@@ -6,62 +6,21 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static("public"));
+app.use(express.static("public")); // your HTML, CSS, JS files
 
-let players = {};
+let players = {}; // { socketId: { name, role } }
 let roles = ["King", "Queen", "Bishop", "Police", "Thief"];
 let gameStarted = false;
 
-// Shuffle function
+// Shuffle helper
 function shuffle(array) {
     return array.sort(() => Math.random() - 0.5);
 }
 
-io.on("connection", (socket) => {
-    console.log("Player connected:", socket.id);
-
-    socket.on("join", (name) => {
-        if (Object.keys(players).length >= 5 || gameStarted) {
-            socket.emit("roomFull");
-            return;
-        }
-
-        players[socket.id] = {
-            name: name,
-            role: null
-        };
-
-        io.emit("updatePlayers", Object.values(players));
-
-        if (Object.keys(players).length === 5) {
-            startGame();
-        }
-    });
-
-    socket.on("guess", (playerName) => {
-        if (!gameStarted) return;
-
-        const guessedPlayer = Object.values(players)
-            .find(p => p.name === playerName);
-
-        if (!guessedPlayer) return;
-
-        if (guessedPlayer.role === "Thief") {
-            io.emit("result", "Police Wins! 🎉");
-        } else {
-            io.emit("result", "Thief Wins! 😈");
-        }
-
-        resetGame();
-    });
-
-    socket.on("disconnect", () => {
-        delete players[socket.id];
-        io.emit("updatePlayers", Object.values(players));
-    });
-});
-
+// Start a new game
 function startGame() {
+    if (Object.keys(players).length !== 5) return;
+
     gameStarted = true;
     const shuffledRoles = shuffle([...roles]);
 
@@ -70,20 +29,70 @@ function startGame() {
         io.to(id).emit("yourRole", players[id].role);
     });
 
+    io.emit("updatePlayers", Object.values(players));
     console.log("Game started!");
 }
 
-function resetGame() {
-    // Keep players connected
+// Reset roles for a new round
+function resetRound() {
     Object.keys(players).forEach(id => players[id].role = null);
     gameStarted = false;
-    console.log("Game reset");
+    io.emit("result", "New round can start! Click Start Game.");
     io.emit("updatePlayers", Object.values(players));
 }
 
-// IMPORTANT FOR RENDER
-const PORT = process.env.PORT || 3000;
+io.on("connection", (socket) => {
+    console.log("Player connected:", socket.id);
 
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    // Join game
+    socket.on("join", (name) => {
+        if (Object.keys(players).length >= 5) {
+            socket.emit("roomFull");
+            return;
+        }
+
+        players[socket.id] = { name: name, role: null };
+        io.emit("updatePlayers", Object.values(players));
+
+        // Automatically start if 5 players
+        if (Object.keys(players).length === 5 && !gameStarted) {
+            startGame();
+        }
+    });
+
+    // Police makes a guess
+    socket.on("guess", (playerName) => {
+        if (!gameStarted) return;
+
+        const policeId = Object.keys(players).find(id => players[id].role === "Police");
+        if (socket.id !== policeId) return; // only Police can guess
+
+        const target = Object.values(players).find(p => p.name === playerName);
+        if (!target) return;
+
+        if (target.role === "Thief") {
+            io.emit("result", `Police caught the thief! 🎉`);
+        } else {
+            io.emit("result", `Police guessed wrong. Thief wins! 😈`);
+        }
+
+        // Reset round (roles only, keep players)
+        resetRound();
+    });
+
+    // Start a new round manually (optional)
+    socket.on("startNewRound", () => {
+        if (!gameStarted && Object.keys(players).length === 5) {
+            startGame();
+        }
+    });
+
+    // Disconnect
+    socket.on("disconnect", () => {
+        delete players[socket.id];
+        io.emit("updatePlayers", Object.values(players));
+    });
 });
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

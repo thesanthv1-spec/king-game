@@ -2,10 +2,9 @@ const socket = io();
 
 function joinGame() {
     const name = document.getElementById("nameInput").value;
-    if (name.trim() === "") return;
+    if (!name.trim()) return;
 
     socket.emit("join", name);
-
     document.getElementById("joinSection").style.display = "none";
     document.getElementById("gameSection").style.display = "block";
 }
@@ -17,6 +16,7 @@ socket.on("updatePlayers", (players) => {
     players.forEach(player => {
         const div = document.createElement("div");
         div.innerText = player.name;
+        div.classList.add("playerDiv");
         list.appendChild(div);
     });
 });
@@ -24,12 +24,12 @@ socket.on("updatePlayers", (players) => {
 socket.on("yourRole", (role) => {
     document.getElementById("roleText").innerText = "Your Role: " + role;
 
+    // If police, make player names clickable to guess
     if (role === "Police") {
-        document.getElementById("playerList").onclick = (e) => {
-            if (e.target.tagName === "DIV") {
-                socket.emit("guess", e.target.innerText);
-            }
-        };
+        document.querySelectorAll(".playerDiv").forEach(div => {
+            div.style.cursor = "pointer";
+            div.onclick = () => socket.emit("guess", div.innerText);
+        });
     }
 });
 
